@@ -1,0 +1,20 @@
+<h1>Enter trip details</h1>
+
+<!--TODO: Change the values-->
+<form method="POST">
+    <label>Pick Up Postal Code:</label><br />
+    <input type="text" name="pickup"><br />
+    <label>Drop Off Postal Code:</label><br />
+    <input type="text" name="dropoff"></input><br />
+    <input type="submit">
+</form>
+
+<p>
+    Your Driver Details are : <br>
+    First Name : {{.FirstName}} <br>
+    Last Name:   {{.LastName}} <br>
+    Mobile Number:    {{.MobileNo}} <br>
+    License Number:    {{.LicenseNo}}
+</p>
+<br>
+<p>The driver will start your ride soon</p>

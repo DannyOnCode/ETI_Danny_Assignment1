@@ -3,14 +3,20 @@
 <!--TODO: Change the values-->
 <form method="POST">
     <label>PassengerID:</label><br />
-    <input type="text" name="passengerid"></input><br />
+    <input type="text" name="passengerid"><br />
+    <label>First Name:</label><br />
+    <input type="text" name="firstname"><br />
+    <label>Last Name:</label><br />
+    <input type="text" name="lastname"></input><br />
     <label>Mobile Number:</label><br />
     <input type="text" name="contact"></input><br />
+    <label>Email:</label><br />
+    <input type="text" name="email"></input><br />
     <input type="submit">
 </form>
 
 <p>
-    Your logined in details are : <br>
+    Your Details have been registed as : <br>
     PassengerID : {{.PassengerID}} <br>
     First Name : {{.FirstName}} <br>
     Last Name:   {{.LastName}} <br>

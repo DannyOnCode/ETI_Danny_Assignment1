@@ -1,12 +1,20 @@
-<h1>Enter driver login details</h1>
+<h1>Enter Driver login details</h1>
 
 <!--TODO: Change the values-->
 <form method="POST">
-    <label>Email:</label><br />
-    <input type="text" name="email"><br />
-    <label>Subject:</label><br />
-    <input type="text" name="subject"><br />
-    <label>Message:</label><br />
-    <textarea name="message"></textarea><br />
+    <label>DriverID:</label><br />
+    <input type="text" name="driverid"></input><br />
+    <label>Mobile Number:</label><br />
+    <input type="text" name="contact"></input><br />
     <input type="submit">
 </form>
+
+<p>
+    Your logined in details are : <br>
+    PassengerID : {{.DriverID}} <br>
+    First Name : {{.FirstName}} <br>
+    Last Name:   {{.LastName}} <br>
+    Mobile Number:    {{.MobileNo}} <br>
+    Email:    {{.Email}}<br>
+    License Number:    {{.LicenseNo}}
+</p>

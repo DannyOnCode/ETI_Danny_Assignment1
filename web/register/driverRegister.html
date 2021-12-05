@@ -1,0 +1,28 @@
+<h1>Enter driver login details</h1>
+
+<!--TODO: Change the values-->
+<form method="POST">
+    <label>DriverID:</label><br />
+    <input type="text" name="driverid"><br />
+    <label>First Name:</label><br />
+    <input type="text" name="firstname"><br />
+    <label>Last Name:</label><br />
+    <input type="text" name="lastname"></input><br />
+    <label>Mobile Number:</label><br />
+    <input type="text" name="contact"></input><br />
+    <label>Email:</label><br />
+    <input type="text" name="email"></input><br />
+    <label>License Number:</label><br />
+    <input type="text" name="licenseno"></input><br />
+    <input type="submit">
+</form>
+
+<p>
+    Your Details have been registed as : <br>
+    DriverID : {{.DriverID}} <br>
+    First Name : {{.FirstName}} <br>
+    Last Name:   {{.LastName}} <br>
+    Mobile Number:    {{.MobileNo}} <br>
+    Email:    {{.Email}}<br>
+    License Number:    {{.LicenseNo}}
+</p>
