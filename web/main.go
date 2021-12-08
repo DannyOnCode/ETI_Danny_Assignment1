@@ -38,9 +38,18 @@ type Location struct {
 	DropOffPostalCode string `json:"DropOffPostalCode"`
 }
 
+type Trip struct {
+	TripID            string `json:"TripID"`
+	PassengerID       string `json:"PassengerID"`
+	DriverID          string `json:"DriverID"`
+	PickUpPostalCode  string `json:"PickUpPostalCode"`
+	DropOffPostalCode string `json:"DropOffPostalCode"`
+	StartDateTime     string `json:"StartDateTime"`
+	EndDateTime       string `json:"EndDateTime"`
+}
+
 var currentPassengerInfo Passenger
 var currentDriverInfo Driver
-var tripDriver Driver
 
 //Page 1 - Main Page
 func mainMenu(w http.ResponseWriter, r *http.Request) {
@@ -292,6 +301,8 @@ func tripPassenger(w http.ResponseWriter, r *http.Request) {
 		DropOffPostalCode: r.FormValue("dropoff"),
 	}
 
+	var tripDriver Driver
+
 	jsonValue, _ := json.Marshal(details)
 	response, err := http.Post(tripURL+"/"+currentPassengerInfo.PassengerID,
 		"application/json", bytes.NewBuffer(jsonValue))
@@ -310,6 +321,84 @@ func tripPassenger(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, tripDriver)
 }
 
+func tripDriver(w http.ResponseWriter, r *http.Request) {
+	var availableTrip Trip
+	if r.Method != http.MethodPost {
+		//TO DO: Add Get Function here to check if driver has ride available
+		//Add check here if has ride, display ride. Else : template.Must(template.ParseFiles("Trip/driverNoTrip.html"))
+		var url string
+		if currentDriverInfo.DriverID != "" {
+			url = tripURL + "/" + currentDriverInfo.DriverID
+		} else {
+			// Redirect to No trip page
+			template.Must(template.ParseFiles("login/driverLogin.html"))
+		}
+		response, err := http.Get(url)
+
+		if err != nil {
+			fmt.Printf("The HTTP request failed with error %s\n", err)
+		} else {
+			data, _ := ioutil.ReadAll(response.Body)
+			fmt.Println(response.StatusCode)
+			fmt.Println(string(data))
+
+			json.Unmarshal(data, &availableTrip)
+			fmt.Println(availableTrip)
+			response.Body.Close()
+		}
+		if availableTrip.TripID == "" {
+			tmpl := template.Must(template.ParseFiles("Trip/driverNoTrip.html"))
+			tmpl.Execute(w, nil)
+		} else {
+			tmpl := template.Must(template.ParseFiles("Trip/driverTrip.html"))
+			tmpl.Execute(w, availableTrip)
+		}
+		return
+	}
+	// TO DO: Add PUT request here to start ride
+	var url string
+	if currentDriverInfo.DriverID != "" {
+		url = tripURL + "/" + currentDriverInfo.DriverID
+	} else {
+		// Redirect to No trip page
+		template.Must(template.ParseFiles("login/driverLogin.html"))
+	}
+	response, err := http.Get(url)
+
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+	} else {
+		data, _ := ioutil.ReadAll(response.Body)
+		fmt.Println(response.StatusCode)
+		fmt.Println(string(data))
+
+		json.Unmarshal(data, &availableTrip)
+		fmt.Println(availableTrip)
+		response.Body.Close()
+	}
+	jsonValue, _ := json.Marshal(availableTrip)
+	request, err := http.NewRequest(http.MethodPut, tripURL+"/"+currentDriverInfo.DriverID, bytes.NewBuffer(jsonValue))
+
+	request.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	response, err = client.Do(request)
+
+	var retrivedTrip Trip
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+	} else {
+		data, _ := ioutil.ReadAll(response.Body)
+		fmt.Println(response.StatusCode)
+		fmt.Println(string(data))
+		json.Unmarshal(data, &retrivedTrip)
+		response.Body.Close()
+	}
+	tmpl := template.Must(template.ParseFiles("Trip/startTripPage.html"))
+	fmt.Println(retrivedTrip)
+	tmpl.Execute(w, retrivedTrip)
+}
+
 func main() {
 	r := mux.NewRouter()
 
@@ -323,6 +412,7 @@ func main() {
 	r.HandleFunc("/update/passenger", updatePassenger)
 	r.HandleFunc("/update/driver", updateDriver)
 	r.HandleFunc("/Trip/passengerTrip", tripPassenger)
+	r.HandleFunc("/Trip/driverTrip", tripDriver)
 	fmt.Println("Listening at port 5000")
 	http.ListenAndServe(":5000", r)
 }

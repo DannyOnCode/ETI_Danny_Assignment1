@@ -61,6 +61,20 @@ func GetSingleRecord(db *sql.DB, tripID string) Trip {
 	return foundTrip
 }
 
+func GetSingleRecordFromDriver(db *sql.DB, DriverID string) Trip {
+	var foundTrip Trip
+	query := fmt.Sprintf("Select * FROM DRide.Trip WHERE DriverID = " + "'" + DriverID + "' AND (StartDateTime IS NULL OR EndDateTime IS NULL)")
+
+	err := db.QueryRow(query).Scan(&foundTrip.TripID, &foundTrip.PassengerID,
+		&foundTrip.DriverID, &foundTrip.PickUpPostalCode, &foundTrip.DropOffPostalCode, &foundTrip.StartDateTime, &foundTrip.EndDateTime)
+
+	if err != nil && err != sql.ErrNoRows {
+		return foundTrip
+	}
+
+	return foundTrip
+}
+
 func trip(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRide")
 
@@ -73,10 +87,16 @@ func trip(w http.ResponseWriter, r *http.Request) {
 
 	//Get Trip Record
 	if r.Method == "GET" {
-
+		DriverID := params["ID"]
+		if DriverID != "" {
+			retrievedTrip := GetSingleRecordFromDriver(db, DriverID)
+			json.NewEncoder(w).Encode(retrievedTrip)
+			fmt.Println("Returned retrieved Trip from DriverID")
+			return
+		}
 		retrievedTrip := GetSingleRecord(db, params["tripID"])
 		json.NewEncoder(w).Encode(retrievedTrip)
-		fmt.Println("Returned retrievd Driver")
+		fmt.Println("Returned retrieved Trip from TripID")
 		return
 	}
 
@@ -120,8 +140,8 @@ func trip(w http.ResponseWriter, r *http.Request) {
 						panic(err.Error())
 					}
 					if driver.Status == "Available" {
-						query := fmt.Sprintf("INSERT INTO Trip (PassengerID, DriverID, PickUpPostalCode, DropOffPostalCode, StartDateTime) VALUES ('%s', '%s', '%s', '%s', '%s');",
-							passengerID, driver.DriverID, location.PickUpPostalCode, location.DropOffPostalCode, time.Now().Format("2006-01-02 15:04:05"))
+						query := fmt.Sprintf("INSERT INTO Trip (PassengerID, DriverID, PickUpPostalCode, DropOffPostalCode) VALUES ('%s', '%s', '%s', '%s');",
+							passengerID, driver.DriverID, location.PickUpPostalCode, location.DropOffPostalCode) //)
 
 						_, err := db.Query(query)
 
@@ -142,7 +162,6 @@ func trip(w http.ResponseWriter, r *http.Request) {
 						fmt.Println("Changed driver status")
 						w.WriteHeader(http.StatusCreated)
 						json.NewEncoder(w).Encode(driver)
-						//w.Write([]byte("Added as test"))
 						return
 					}
 
@@ -150,6 +169,87 @@ func trip(w http.ResponseWriter, r *http.Request) {
 
 				w.WriteHeader(http.StatusNotFound)
 				w.Write([]byte("No available Drivers please try again later"))
+
+			} else {
+				w.WriteHeader(
+					http.StatusUnprocessableEntity)
+				w.Write([]byte("422 - Please supply driver information " +
+					"in JSON format"))
+				defer db.Close()
+			}
+		}
+
+		if r.Method == "PUT" {
+			driverID := params["ID"]
+			var trip Trip
+			reqBody, err := ioutil.ReadAll(r.Body)
+			if err == nil {
+				// convert JSON to object
+				fmt.Println(string(reqBody))
+				json.Unmarshal(reqBody, &trip)
+
+				if driverID == "" {
+					w.WriteHeader(
+						http.StatusUnprocessableEntity)
+					w.Write([]byte(
+						"422 - Driver Not Log-ed in"))
+
+					defer db.Close()
+					return
+				}
+				fmt.Println(trip)
+				// Check for Missing Start Date Time
+				if trip.StartDateTime == "" {
+					// Insert Start DateTime and indicate trip has been started
+					// update trip
+					query := fmt.Sprintf("UPDATE Trip SET StartDateTime = '%s' WHERE TripID = '%s'",
+						time.Now().Format("2006-01-02 15:04:05"), trip.TripID)
+
+					_, err := db.Query(query)
+
+					if err != nil {
+						panic(err.Error())
+					}
+					w.WriteHeader(http.StatusCreated)
+					fmt.Println("202 - Trip updated: " + trip.TripID)
+					updatedTrip := GetSingleRecord(db, trip.TripID)
+					json.NewEncoder(w).Encode(updatedTrip)
+					return
+
+				} else if trip.EndDateTime == "" {
+					//Insert End Datetime and indicate trip has ended
+					query := fmt.Sprintf("UPDATE Trip SET EndDateTime = '%s' WHERE TripID = '%s'",
+						time.Now().Format("2006-01-02 15:04:05"), trip.TripID)
+
+					_, err := db.Query(query)
+
+					if err != nil {
+						panic(err.Error())
+					}
+
+					// Setting driver availability to Unavailable
+					queryStatus := fmt.Sprintf("UPDATE Driver SET Status = 'Available' WHERE DriverID = '%s';",
+						trip.DriverID)
+					_, err2 := db.Query(queryStatus)
+
+					if err2 != nil {
+						panic(err2.Error())
+					}
+
+					fmt.Println("Changed driver status")
+					w.WriteHeader(http.StatusCreated)
+					fmt.Println("202 - Trip updated: " + trip.TripID)
+					updatedTrip := GetSingleRecord(db, trip.TripID)
+					json.NewEncoder(w).Encode(updatedTrip)
+				} else {
+					w.WriteHeader(
+						http.StatusUnprocessableEntity)
+					w.Write([]byte(
+						"404 - Unexpected error in Updating trip details neither startdatetime or enddatetime is null"))
+
+					defer db.Close()
+					return
+				}
 
 			} else {
 				w.WriteHeader(
