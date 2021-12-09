@@ -1,0 +1,22 @@
+<h1>Passenger Trip History</h1><br>
+<table>
+    <tr><th>TripID</th><th>PassengerID</th><th>DriverID</th><th>Pick Up Postal Code</th><th>Drop Off Postal Code</th><th>Start DateTime</th><th>End DateTime</th></tr>
+    {{range .}}
+    <tr>
+        <td>{{.TripID}}</td>
+        <td>{{.PassengerID}}</td>
+        <td>{{.DriverID}}</td>
+        <td>{{.PickUpPostalCode}}</td>
+        <td>{{.DropOffPostalCode}}</td>
+        <td>{{.StartDateTime}}</td>
+        <td>{{.EndDateTime}}</td>
+    </tr>
+    {{else}} no trips recorded {{end}}
+</table>
+<br><a href="/"><button>Back to main menu</button></a><br>
+<br><a href="/passenger/main"><button>Back to Passenger main menu</button></a><br>
+<style>
+    table, th, td {
+      border:1px solid black;
+    }
+    </style>

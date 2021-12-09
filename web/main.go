@@ -289,6 +289,42 @@ func updateDriver(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func deletePassenger(w http.ResponseWriter, r *http.Request) {
+	request, err := http.NewRequest(http.MethodDelete,
+		passengerURL+"/"+currentPassengerInfo.PassengerID, nil)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+	} else {
+		data, _ := ioutil.ReadAll(response.Body)
+		fmt.Println(response.StatusCode)
+		fmt.Println(string(data))
+		response.Body.Close()
+	}
+	http.Redirect(w, r, "http://localhost:5000/passenger/main", http.StatusFound)
+}
+
+func deleteDriver(w http.ResponseWriter, r *http.Request) {
+	request, err := http.NewRequest(http.MethodDelete,
+		driverURL+"/"+currentDriverInfo.DriverID, nil)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+	} else {
+		data, _ := ioutil.ReadAll(response.Body)
+		fmt.Println(response.StatusCode)
+		fmt.Println(string(data))
+		response.Body.Close()
+	}
+	http.Redirect(w, r, "http://localhost:5000/driver/main", http.StatusFound)
+}
+
 func tripPassenger(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("Trip/passengerTrip.html"))
 	if r.Method != http.MethodPost {
@@ -328,7 +364,7 @@ func tripDriver(w http.ResponseWriter, r *http.Request) {
 		//Add check here if has ride, display ride. Else : template.Must(template.ParseFiles("Trip/driverNoTrip.html"))
 		var url string
 		if currentDriverInfo.DriverID != "" {
-			url = tripURL + "/" + currentDriverInfo.DriverID
+			url = tripURL + "/" + currentDriverInfo.DriverID + "?userType=" + "driver"
 		} else {
 			// Redirect to No trip page
 			template.Must(template.ParseFiles("login/driverLogin.html"))
@@ -358,7 +394,7 @@ func tripDriver(w http.ResponseWriter, r *http.Request) {
 	// TO DO: Add PUT request here to start ride
 	var url string
 	if currentDriverInfo.DriverID != "" {
-		url = tripURL + "/" + currentDriverInfo.DriverID
+		url = tripURL + "/" + currentDriverInfo.DriverID + "?userType=" + "driver"
 	} else {
 		// Redirect to No trip page
 		template.Must(template.ParseFiles("login/driverLogin.html"))
@@ -399,6 +435,29 @@ func tripDriver(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, retrivedTrip)
 }
 
+func viewPassengerHistory(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("Trip/passengerHistory.html"))
+	var url string
+	if currentPassengerInfo.PassengerID != "" {
+		url = tripURL + "/" + currentPassengerInfo.PassengerID + "?userType=" + "passenger"
+	}
+	response, err := http.Get(url)
+
+	var tripArray []Trip
+	if err != nil {
+		fmt.Printf("The HTTP request failed with error %s\n", err)
+	} else {
+		data, _ := ioutil.ReadAll(response.Body)
+		fmt.Println(response.StatusCode)
+		fmt.Println(string(data))
+
+		json.Unmarshal(data, &tripArray)
+		response.Body.Close()
+	}
+
+	tmpl.Execute(w, tripArray)
+}
+
 func main() {
 	r := mux.NewRouter()
 
@@ -411,8 +470,11 @@ func main() {
 	r.HandleFunc("/driver/main", dMainMenu)
 	r.HandleFunc("/update/passenger", updatePassenger)
 	r.HandleFunc("/update/driver", updateDriver)
+	r.HandleFunc("/delete/passenger", deletePassenger)
+	r.HandleFunc("/delete/driver", deleteDriver)
 	r.HandleFunc("/Trip/passengerTrip", tripPassenger)
 	r.HandleFunc("/Trip/driverTrip", tripDriver)
+	r.HandleFunc("/passenger/viewHistory", viewPassengerHistory)
 	fmt.Println("Listening at port 5000")
 	http.ListenAndServe(":5000", r)
 }

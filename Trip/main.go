@@ -75,6 +75,32 @@ func GetSingleRecordFromDriver(db *sql.DB, DriverID string) Trip {
 	return foundTrip
 }
 
+func GetSingleRecordFromPassenger(db *sql.DB, PassengerID string) []Trip {
+	var tripArray []Trip
+	query := fmt.Sprintf("Select * FROM DRide.Trip WHERE PassengerID = " + "'" + PassengerID + "' ORDER BY EndDateTime IS NULL DESC, EndDateTime DESC")
+
+	results, err := db.Query(query)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for results.Next() {
+		var toBeAppendedTrip Trip
+
+		err := results.Scan(&toBeAppendedTrip.TripID, &toBeAppendedTrip.PassengerID,
+			&toBeAppendedTrip.DriverID, &toBeAppendedTrip.PickUpPostalCode, &toBeAppendedTrip.DropOffPostalCode, &toBeAppendedTrip.StartDateTime, &toBeAppendedTrip.EndDateTime)
+
+		if err != nil {
+			panic(err.Error())
+		}
+
+		tripArray = append(tripArray, toBeAppendedTrip)
+	}
+
+	return tripArray
+}
+
 func trip(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRide")
 
@@ -87,14 +113,21 @@ func trip(w http.ResponseWriter, r *http.Request) {
 
 	//Get Trip Record
 	if r.Method == "GET" {
-		DriverID := params["ID"]
-		if DriverID != "" {
-			retrievedTrip := GetSingleRecordFromDriver(db, DriverID)
+		ID := params["ID"]
+		v := r.URL.Query()
+		if v["userType"][0] == "driver" {
+			retrievedTrip := GetSingleRecordFromDriver(db, ID)
 			json.NewEncoder(w).Encode(retrievedTrip)
 			fmt.Println("Returned retrieved Trip from DriverID")
 			return
+		} else if v["userType"][0] == "passenger" {
+			var retrievedTrip []Trip
+			retrievedTrip = GetSingleRecordFromPassenger(db, ID)
+			json.NewEncoder(w).Encode(retrievedTrip)
+			fmt.Println("Returned retrieved Trip from PassengerID")
+			return
 		}
-		retrievedTrip := GetSingleRecord(db, params["tripID"])
+		retrievedTrip := GetSingleRecord(db, params["ID"])
 		json.NewEncoder(w).Encode(retrievedTrip)
 		fmt.Println("Returned retrieved Trip from TripID")
 		return

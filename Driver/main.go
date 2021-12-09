@@ -78,6 +78,11 @@ func driver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == "DELETE" {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("403 - Unable to delete account due to auditing reasons"))
+	}
+
 	if r.Header.Get("Content-type") == "application/json" {
 
 		// Register
@@ -198,6 +203,7 @@ func driver(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte("422 - Please provide Driver information"))
 			}
 		}
+
 	}
 
 	defer db.Close()
