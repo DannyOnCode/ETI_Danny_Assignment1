@@ -211,7 +211,7 @@ func driver(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/api/driver/{driverID}", driver).Methods(
+	router.HandleFunc("/api/v1/driver/{driverID}", driver).Methods(
 		"GET", "PUT", "POST", "DELETE")
 
 	fmt.Println("Listening at port 100")

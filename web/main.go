@@ -11,9 +11,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const passengerURL = "http://localhost:80/api/passenger"
-const driverURL = "http://localhost:100/api/driver"
-const tripURL = "http://localhost:120/api/trip"
+const passengerURL = "http://localhost:80/api/v1/passenger"
+const driverURL = "http://localhost:100/api/v1/driver"
+const tripURL = "http://localhost:120/api/v1/trip"
 
 type Passenger struct {
 	PassengerID string `json:"PassengerID"`

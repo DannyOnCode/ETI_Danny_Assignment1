@@ -211,7 +211,7 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/api/passenger/{passengerID}", passenger).Methods(
+	router.HandleFunc("/api/v1/passenger/{passengerID}", passenger).Methods(
 		"GET", "PUT", "POST", "DELETE")
 
 	fmt.Println("Listening at port 80")

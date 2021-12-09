@@ -297,7 +297,7 @@ func trip(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/api/trip/{ID}", trip).Methods(
+	router.HandleFunc("/api/v1/trip/{ID}", trip).Methods(
 		"GET", "PUT", "POST", "DELETE")
 
 	fmt.Println("Listening at port 120")
