@@ -1,4 +1,4 @@
-# Table of Contents
+## Table of Contents
 1. [Introduction](#introduction)
 2. [Design Consideration](#consideration)
 3. [Architecture of Application](#architecture)
@@ -9,22 +9,22 @@
     1. [Database](#database)
     2. [Microservices](#microservice)
 
-# Introduction  <a name="introduction"></a>
+## Introduction  <a name="introduction"></a>
 
-# Design Consideration of Microservice <a name="consideration"></a>
+## Design Consideration of Microservice <a name="consideration"></a>
 
-# Architecture of Application <a name="architecture"></a>
+## Architecture of Application <a name="architecture"></a>
 
-## Passenger API <a name="passenger"></a>
+### Passenger API <a name="passenger"></a>
 
-## Driver API <a name="driver"></a>
+### Driver API <a name="driver"></a>
 
-## Trip API <a name="trip"></a>
+### Trip API <a name="trip"></a>
 
-# Instructions to setting up and running of microservices <a name="instructions"></a>
+## Instructions to setting up and running of microservices <a name="instructions"></a>
 
-## Setting up of Database <a name="database"></a>
+### Setting up of Database <a name="database"></a>
 
-## Commands to run Microservices <a name="microservice"></a>
+### Commands to run Microservices <a name="microservice"></a>
 
 
