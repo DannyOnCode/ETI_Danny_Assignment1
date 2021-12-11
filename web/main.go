@@ -11,10 +11,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Initialising api routes
 const passengerURL = "http://localhost:80/api/v1/passenger"
 const driverURL = "http://localhost:100/api/v1/driver"
 const tripURL = "http://localhost:120/api/v1/trip"
 
+// Creation of Struct
 type Passenger struct {
 	PassengerID string `json:"PassengerID"`
 	FirstName   string `json:"FirstName"`
@@ -48,26 +50,29 @@ type Trip struct {
 	EndDateTime       string `json:"EndDateTime"`
 }
 
+// Initialising local variables to store log-ed in user data
 var currentPassengerInfo Passenger
 var currentDriverInfo Driver
 
-//Page 1 - Main Page
+//Main Menu Page
 func mainMenu(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("mainMenu.html"))
 	tmpl.Execute(w, struct{ Success bool }{true})
 }
 
+//Passenger Main Menu Page
 func pMainMenu(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("passengerMainPage.html"))
 	tmpl.Execute(w, currentPassengerInfo)
 }
 
+//Driver Main Menu Page
 func dMainMenu(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("driverMainPage.html"))
 	tmpl.Execute(w, currentDriverInfo)
 }
 
-// Login Driver maybe
+// Driver Login Page
 func loginDriver(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("login/driverLogin.html"))
 	if r.Method != http.MethodPost {
@@ -98,13 +103,13 @@ func loginDriver(w http.ResponseWriter, r *http.Request) {
 		response.Body.Close()
 	}
 
-	if currentDriverInfo.MobileNo != "" {
+	if currentDriverInfo.MobileNo != "" && currentDriverInfo.MobileNo == details.MobileNo {
 		http.Redirect(w, r, "http://localhost:5000/driver/main", http.StatusFound)
 	}
-	tmpl.Execute(w, currentDriverInfo)
+	tmpl.Execute(w, nil)
 }
 
-//Register Driver
+//Driver Register Page
 func registerDriver(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("register/driverRegister.html"))
 	if r.Method != http.MethodPost {
@@ -121,7 +126,6 @@ func registerDriver(w http.ResponseWriter, r *http.Request) {
 		LicenseNo: r.FormValue("licenseno"),
 	}
 
-	// TODO: Connect to API in Passenger Microservice (Look into useRest Tutorial)
 	jsonValue, _ := json.Marshal(details)
 
 	response, err := http.Post(driverURL+"/"+details.MobileNo,
@@ -141,7 +145,7 @@ func registerDriver(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Login Passenger page
+// Passenger Login Page
 func loginPassenger(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("login/passengerLogin.html"))
 	if r.Method != http.MethodPost {
@@ -171,12 +175,13 @@ func loginPassenger(w http.ResponseWriter, r *http.Request) {
 		response.Body.Close()
 	}
 
-	if currentPassengerInfo.MobileNo != "" {
+	if currentPassengerInfo.MobileNo != "" && currentPassengerInfo.MobileNo == details.MobileNo {
 		http.Redirect(w, r, "http://localhost:5000/passenger/main", http.StatusFound)
 	}
-	tmpl.Execute(w, currentPassengerInfo)
+	tmpl.Execute(w, nil)
 }
 
+// Passenger Register Page
 func registerPassenger(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("register/passengerRegister.html"))
 	if r.Method != http.MethodPost {
@@ -192,7 +197,6 @@ func registerPassenger(w http.ResponseWriter, r *http.Request) {
 		Email:       r.FormValue("email"),
 	}
 
-	// TODO: Connect to API in Passenger Microservice (Look into useRest Tutorial)
 	jsonValue, _ := json.Marshal(details)
 
 	response, err := http.Post(passengerURL+"/"+details.MobileNo,
@@ -212,6 +216,7 @@ func registerPassenger(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Passenger Update Page
 func updatePassenger(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("updateInformation/passengerUpdate.html"))
 	if r.Method != http.MethodPost {
@@ -226,7 +231,6 @@ func updatePassenger(w http.ResponseWriter, r *http.Request) {
 		Email:     r.FormValue("email"),
 	}
 
-	// TODO: Connect to API in Passenger Microservice (Look into useRest Tutorial)
 	jsonValue, _ := json.Marshal(details)
 
 	request, err := http.NewRequest(http.MethodPut, passengerURL+"/"+currentPassengerInfo.PassengerID+"?mobileNo="+currentPassengerInfo.MobileNo, bytes.NewBuffer(jsonValue))
@@ -250,6 +254,7 @@ func updatePassenger(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Passenger Update Page
 func updateDriver(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("updateInformation/driverUpdate.html"))
 	if r.Method != http.MethodPost {
@@ -265,7 +270,6 @@ func updateDriver(w http.ResponseWriter, r *http.Request) {
 		LicenseNo: r.FormValue("licenseno"),
 	}
 
-	// TODO: Connect to API in Passenger Microservice (Look into useRest Tutorial)
 	jsonValue, _ := json.Marshal(details)
 
 	request, err := http.NewRequest(http.MethodPut, driverURL+"/"+currentDriverInfo.DriverID+"?mobileNo="+currentDriverInfo.MobileNo, bytes.NewBuffer(jsonValue))
@@ -289,6 +293,7 @@ func updateDriver(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Passenger Delete Function
 func deletePassenger(w http.ResponseWriter, r *http.Request) {
 	request, err := http.NewRequest(http.MethodDelete,
 		passengerURL+"/"+currentPassengerInfo.PassengerID, nil)
@@ -307,6 +312,7 @@ func deletePassenger(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "http://localhost:5000/passenger/main", http.StatusFound)
 }
 
+// Driver Delete Function
 func deleteDriver(w http.ResponseWriter, r *http.Request) {
 	request, err := http.NewRequest(http.MethodDelete,
 		driverURL+"/"+currentDriverInfo.DriverID, nil)
@@ -325,6 +331,7 @@ func deleteDriver(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "http://localhost:5000/driver/main", http.StatusFound)
 }
 
+// Passenger Request Trip Page
 func tripPassenger(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("Trip/passengerTrip.html"))
 	if r.Method != http.MethodPost {
@@ -357,11 +364,12 @@ func tripPassenger(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, tripDriver)
 }
 
+// Driver Trip Page
 func tripDriver(w http.ResponseWriter, r *http.Request) {
 	var availableTrip Trip
 	if r.Method != http.MethodPost {
-		//TO DO: Add Get Function here to check if driver has ride available
-		//Add check here if has ride, display ride. Else : template.Must(template.ParseFiles("Trip/driverNoTrip.html"))
+		//Check if driver has requested rides, display ride.
+		//Else will display, no rides available
 		var url string
 		if currentDriverInfo.DriverID != "" {
 			url = tripURL + "/" + currentDriverInfo.DriverID + "?userType=" + "driver"
@@ -391,7 +399,8 @@ func tripDriver(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// TO DO: Add PUT request here to start ride
+
+	// PUT request here after driver has pressed on Start Trip/End Trip
 	var url string
 	if currentDriverInfo.DriverID != "" {
 		url = tripURL + "/" + currentDriverInfo.DriverID + "?userType=" + "driver"
@@ -435,6 +444,7 @@ func tripDriver(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, retrivedTrip)
 }
 
+// Passenger View Trip History Page
 func viewPassengerHistory(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.ParseFiles("Trip/passengerHistory.html"))
 	var url string
@@ -461,20 +471,27 @@ func viewPassengerHistory(w http.ResponseWriter, r *http.Request) {
 func main() {
 	r := mux.NewRouter()
 
+	// Main Menu Pages
 	r.HandleFunc("/", mainMenu)
-	r.HandleFunc("/login/driver", loginDriver)
-	r.HandleFunc("/login/passenger", loginPassenger)
-	r.HandleFunc("/register/passenger", registerPassenger)
-	r.HandleFunc("/register/driver", registerDriver)
 	r.HandleFunc("/passenger/main", pMainMenu)
 	r.HandleFunc("/driver/main", dMainMenu)
-	r.HandleFunc("/update/passenger", updatePassenger)
+
+	// Driver Pages/Functions
+	r.HandleFunc("/login/driver", loginDriver)
+	r.HandleFunc("/register/driver", registerDriver)
 	r.HandleFunc("/update/driver", updateDriver)
-	r.HandleFunc("/delete/passenger", deletePassenger)
 	r.HandleFunc("/delete/driver", deleteDriver)
-	r.HandleFunc("/Trip/passengerTrip", tripPassenger)
 	r.HandleFunc("/Trip/driverTrip", tripDriver)
+
+	// Passenger Pages/Functions
+	r.HandleFunc("/login/passenger", loginPassenger)
+	r.HandleFunc("/register/passenger", registerPassenger)
+	r.HandleFunc("/update/passenger", updatePassenger)
+	r.HandleFunc("/delete/passenger", deletePassenger)
+	r.HandleFunc("/Trip/passengerTrip", tripPassenger)
 	r.HandleFunc("/passenger/viewHistory", viewPassengerHistory)
+
+	// Run the website on port 5000
 	fmt.Println("Listening at port 5000")
 	http.ListenAndServe(":5000", r)
 }

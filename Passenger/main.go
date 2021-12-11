@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//Creation of Struct
 type Passenger struct {
 	PassengerID string
 	FirstName   string
@@ -21,8 +22,9 @@ type Passenger struct {
 	Email       string
 }
 
+// Checking for correct login information
 func validKey(r *http.Request, passengerID string) bool {
-	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRide")
+	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRidePassenger")
 
 	if err != nil {
 		panic(err.Error())
@@ -41,9 +43,10 @@ func validKey(r *http.Request, passengerID string) bool {
 	}
 }
 
+// Getting of a single passenger record using passenger id
 func GetSingleRecord(db *sql.DB, passengerID string) Passenger {
 	var foundPassenger Passenger
-	query := fmt.Sprintf("Select * FROM DRide.Passenger WHERE PassengerID = " + "'" + passengerID + "'")
+	query := fmt.Sprintf("Select * FROM DRidePassenger.Passenger WHERE PassengerID = " + "'" + passengerID + "'")
 
 	err := db.QueryRow(query).Scan(&foundPassenger.PassengerID, &foundPassenger.FirstName,
 		&foundPassenger.LastName, &foundPassenger.MobileNo, &foundPassenger.Email)
@@ -55,8 +58,9 @@ func GetSingleRecord(db *sql.DB, passengerID string) Passenger {
 	return foundPassenger
 }
 
+// Passenger API with methods GET PUT POST DELETE
 func passenger(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRide")
+	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRidePassenger")
 
 	// handle db error
 	if err != nil {
@@ -65,7 +69,7 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 
-	//Login
+	// Login
 	if r.Method == "GET" {
 		if !validKey(r, params["passengerID"]) {
 			w.WriteHeader(http.StatusNotFound)
@@ -78,6 +82,7 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Delete
 	if r.Method == "DELETE" {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("403 - Unable to delete account due to auditing reasons"))
@@ -105,12 +110,12 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				// check if course exists; add only if
-				// course does not exist
+				// check if passenger exists; add only if
+				// passenger does not exist
 				retrivedPassenger := GetSingleRecord(db, newPassenger.PassengerID)
 				if retrivedPassenger.PassengerID == "" {
-					// Add to database here
-					query := fmt.Sprintf("INSERT INTO Passenger VALUES ('%s', '%s', '%s', '%s', '%s')",
+					// Insert new passenger details into database here
+					query := fmt.Sprintf("INSERT INTO DRidePassenger.Passenger VALUES ('%s', '%s', '%s', '%s', '%s')",
 						newPassenger.PassengerID, newPassenger.FirstName, newPassenger.LastName, newPassenger.MobileNo, newPassenger.Email)
 
 					_, err := db.Query(query)
@@ -119,7 +124,7 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 						panic(err.Error())
 					}
 					w.WriteHeader(http.StatusCreated)
-					w.Write([]byte("Added as test"))
+					w.Write([]byte("Passenger Added"))
 
 				} else {
 					w.WriteHeader(http.StatusConflict)
@@ -130,14 +135,15 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 			} else {
 				w.WriteHeader(
 					http.StatusUnprocessableEntity)
-				w.Write([]byte("422 - Please supply course information " +
+				w.Write([]byte("422 - Please supply passenger information " +
 					"in JSON format"))
 				defer db.Close()
 			}
 		}
 
+		// Updating passenger information
 		if r.Method == "PUT" {
-
+			// Ensures that the passenger is log-ed in
 			if !validKey(r, params["passengerID"]) {
 				w.WriteHeader(http.StatusNotFound)
 				w.Write([]byte("401 - Invalid key"))
@@ -160,13 +166,13 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				// check if passengerID exists; add only if
-				// number does not exist
+				// check if passenger exists; add only if
+				// passenger does not exist
 				retrivedPassenger := GetSingleRecord(db, params["passengerID"])
 
 				if retrivedPassenger.PassengerID == "" {
-					// Add to database here
-					query := fmt.Sprintf("INSERT INTO Passenger VALUES ('%s', '%s', '%s', '%s', '%s')",
+					// Insert into database here
+					query := fmt.Sprintf("INSERT INTO DRidePassenger.Passenger VALUES ('%s', '%s', '%s', '%s', '%s')",
 						newUpdatedPassengerInfo.PassengerID, newUpdatedPassengerInfo.FirstName, newUpdatedPassengerInfo.LastName, newUpdatedPassengerInfo.MobileNo, newUpdatedPassengerInfo.Email)
 
 					_, err := db.Query(query)
@@ -175,17 +181,17 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 						panic(err.Error())
 					}
 					w.WriteHeader(http.StatusCreated)
-					w.Write([]byte("Added as test"))
+					w.Write([]byte("Added passenger"))
 
 					if err != nil {
 						panic(err.Error())
 					}
 					w.WriteHeader(http.StatusCreated)
-					w.Write([]byte("201 - Course added: " +
-						params["courseid"]))
+					w.Write([]byte("201 - Passenger added: " +
+						retrivedPassenger.PassengerID))
 				} else {
-					// update course
-					query := fmt.Sprintf("UPDATE Passenger SET FirstName = '%s', LastName = '%s', MobileNo = '%s', Email = '%s' WHERE PassengerID = '%s'",
+					// update passenger information here
+					query := fmt.Sprintf("UPDATE DRidePassenger.Passenger SET FirstName = '%s', LastName = '%s', MobileNo = '%s', Email = '%s' WHERE PassengerID = '%s'",
 						newUpdatedPassengerInfo.FirstName, newUpdatedPassengerInfo.LastName, newUpdatedPassengerInfo.MobileNo, newUpdatedPassengerInfo.Email, params["passengerID"])
 
 					_, err := db.Query(query)
@@ -194,8 +200,8 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 						panic(err.Error())
 					}
 					w.WriteHeader(http.StatusCreated)
-					w.Write([]byte("202 - Course updated: " +
-						params["courseid"]))
+					w.Write([]byte("202 - Passenger updated: " +
+						retrivedPassenger.PassengerID))
 				}
 			} else {
 				w.WriteHeader(
@@ -211,9 +217,11 @@ func passenger(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
+	// Passenger API Methods
 	router.HandleFunc("/api/v1/passenger/{passengerID}", passenger).Methods(
 		"GET", "PUT", "POST", "DELETE")
 
+	// Using port 80 as passenger API
 	fmt.Println("Listening at port 80")
 	log.Fatal(http.ListenAndServe(":80", router))
 

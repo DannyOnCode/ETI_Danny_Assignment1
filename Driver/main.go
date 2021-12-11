@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//Creation of Struct
 type Driver struct {
 	DriverID  string `json:"DriverID"`
 	FirstName string `json:"FirstName"`
@@ -23,8 +24,9 @@ type Driver struct {
 	Status    string `json:"Status"`
 }
 
+// Checking for correct login information
 func validKey(r *http.Request, driverID string) bool {
-	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRide")
+	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRideDriver")
 
 	if err != nil {
 		panic(err.Error())
@@ -43,9 +45,10 @@ func validKey(r *http.Request, driverID string) bool {
 	}
 }
 
+// Getting a single driver record using driver id
 func GetSingleRecord(db *sql.DB, driverID string) Driver {
 	var foundDriver Driver
-	query := fmt.Sprintf("Select * FROM DRide.Driver WHERE DriverID = " + "'" + driverID + "'")
+	query := fmt.Sprintf("Select * FROM DRideDriver.Driver WHERE DriverID = " + "'" + driverID + "'")
 
 	err := db.QueryRow(query).Scan(&foundDriver.DriverID, &foundDriver.FirstName,
 		&foundDriver.LastName, &foundDriver.MobileNo, &foundDriver.Email, &foundDriver.LicenseNo, &foundDriver.Status)
@@ -56,8 +59,9 @@ func GetSingleRecord(db *sql.DB, driverID string) Driver {
 	return foundDriver
 }
 
+// Driver API with methods GET PUT POST DELETE
 func driver(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRide")
+	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRideDriver")
 	// handle db error
 	if err != nil {
 		panic(err.Error())
@@ -65,7 +69,7 @@ func driver(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 
-	//Login
+	// Login
 	if r.Method == "GET" {
 		if !validKey(r, params["driverID"]) {
 			w.WriteHeader(http.StatusNotFound)
@@ -78,6 +82,7 @@ func driver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Delete
 	if r.Method == "DELETE" {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("403 - Unable to delete account due to auditing reasons"))
@@ -88,7 +93,6 @@ func driver(w http.ResponseWriter, r *http.Request) {
 		// Register
 		if r.Method == "POST" {
 
-			// read the string sent to the service
 			var newDriver Driver
 			reqBody, err := ioutil.ReadAll(r.Body)
 			if err == nil {
@@ -109,8 +113,8 @@ func driver(w http.ResponseWriter, r *http.Request) {
 				// driver does not exist
 				retrivedDriver := GetSingleRecord(db, newDriver.DriverID)
 				if retrivedDriver.DriverID == "" {
-					// Add to database here
-					query := fmt.Sprintf("INSERT INTO Driver VALUES ('%s', '%s', '%s', '%s', '%s', '%s', 'Available')",
+					// Insert driver into database here
+					query := fmt.Sprintf("INSERT INTO DRideDriver.Driver VALUES ('%s', '%s', '%s', '%s', '%s', '%s', 'Available')",
 						newDriver.DriverID, newDriver.FirstName, newDriver.LastName, newDriver.MobileNo, newDriver.Email, newDriver.LicenseNo)
 
 					_, err := db.Query(query)
@@ -119,7 +123,7 @@ func driver(w http.ResponseWriter, r *http.Request) {
 						panic(err.Error())
 					}
 					w.WriteHeader(http.StatusCreated)
-					w.Write([]byte("Added as test"))
+					w.Write([]byte("Driver Added"))
 
 				} else {
 					w.WriteHeader(http.StatusConflict)
@@ -136,6 +140,7 @@ func driver(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Updating Driver information
 		if r.Method == "PUT" {
 
 			if !validKey(r, params["driverID"]) {
@@ -160,13 +165,13 @@ func driver(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-				// check if driverID exists; add only if
-				// number does not exist
+				// check if driver exists; add only if
+				// driver does not exist
 				retrivedDriver := GetSingleRecord(db, params["driverID"])
 
 				if retrivedDriver.DriverID == "" {
-					// Add to database here
-					query := fmt.Sprintf("INSERT INTO Driver VALUES ('%s', '%s', '%s', '%s', '%s', '%s', 'Available')",
+					// Insert driver into database here
+					query := fmt.Sprintf("INSERT INTO DRideDriver.Driver VALUES ('%s', '%s', '%s', '%s', '%s', '%s', 'Available')",
 						newUpdatedDriverInfo.DriverID, newUpdatedDriverInfo.FirstName, newUpdatedDriverInfo.LastName, newUpdatedDriverInfo.MobileNo, newUpdatedDriverInfo.Email, newUpdatedDriverInfo.LicenseNo)
 
 					_, err := db.Query(query)
@@ -175,7 +180,7 @@ func driver(w http.ResponseWriter, r *http.Request) {
 						panic(err.Error())
 					}
 					w.WriteHeader(http.StatusCreated)
-					w.Write([]byte("Added as test"))
+					w.Write([]byte("Driver Added"))
 
 					if err != nil {
 						panic(err.Error())
@@ -184,8 +189,8 @@ func driver(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte("201 - Driver added: " +
 						params["driverID"]))
 				} else {
-					// update course
-					query := fmt.Sprintf("UPDATE Driver SET FirstName = '%s', LastName = '%s', MobileNo = '%s', Email = '%s', LicenseNumber = '%s' WHERE driverID = '%s'",
+					// update driver information here
+					query := fmt.Sprintf("UPDATE DRideDriver.Driver SET FirstName = '%s', LastName = '%s', MobileNo = '%s', Email = '%s', LicenseNumber = '%s' WHERE driverID = '%s'",
 						newUpdatedDriverInfo.FirstName, newUpdatedDriverInfo.LastName, newUpdatedDriverInfo.MobileNo, newUpdatedDriverInfo.Email, newUpdatedDriverInfo.LicenseNo, params["driverID"])
 
 					_, err := db.Query(query)
@@ -211,9 +216,11 @@ func driver(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
+	// Driver API methods
 	router.HandleFunc("/api/v1/driver/{driverID}", driver).Methods(
 		"GET", "PUT", "POST", "DELETE")
 
+	// Using port 100 as Driver API
 	fmt.Println("Listening at port 100")
 	log.Fatal(http.ListenAndServe(":100", router))
 

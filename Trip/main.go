@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//Creation of Structs
 type Passenger struct {
 	PassengerID string `json:"PassengerID"`
 	FirstName   string `json:"FirstName"`
@@ -47,9 +48,10 @@ type Trip struct {
 	EndDateTime       string `json:"EndDateTime"`
 }
 
+// Getting single trip record using TripID
 func GetSingleRecord(db *sql.DB, tripID string) Trip {
 	var foundTrip Trip
-	query := fmt.Sprintf("Select * FROM DRide.Trip WHERE TripID = " + "'" + tripID + "'")
+	query := fmt.Sprintf("Select * FROM DRideTrip.Trip WHERE TripID = " + "'" + tripID + "'")
 
 	err := db.QueryRow(query).Scan(&foundTrip.TripID, &foundTrip.PassengerID,
 		&foundTrip.DriverID, &foundTrip.PickUpPostalCode, &foundTrip.DropOffPostalCode, &foundTrip.StartDateTime, &foundTrip.EndDateTime)
@@ -61,9 +63,10 @@ func GetSingleRecord(db *sql.DB, tripID string) Trip {
 	return foundTrip
 }
 
+// Getting single trip record where the start or end datetime is null for the input driver record using DriverID
 func GetSingleRecordFromDriver(db *sql.DB, DriverID string) Trip {
 	var foundTrip Trip
-	query := fmt.Sprintf("Select * FROM DRide.Trip WHERE DriverID = " + "'" + DriverID + "' AND (StartDateTime IS NULL OR EndDateTime IS NULL)")
+	query := fmt.Sprintf("Select * FROM DRideTrip.Trip WHERE DriverID = " + "'" + DriverID + "' AND (StartDateTime IS NULL OR EndDateTime IS NULL)")
 
 	err := db.QueryRow(query).Scan(&foundTrip.TripID, &foundTrip.PassengerID,
 		&foundTrip.DriverID, &foundTrip.PickUpPostalCode, &foundTrip.DropOffPostalCode, &foundTrip.StartDateTime, &foundTrip.EndDateTime)
@@ -75,9 +78,11 @@ func GetSingleRecordFromDriver(db *sql.DB, DriverID string) Trip {
 	return foundTrip
 }
 
-func GetSingleRecordFromPassenger(db *sql.DB, PassengerID string) []Trip {
+// Getting all past trip records for passenger using PassengerID
+func GetRecordFromPassenger(db *sql.DB, PassengerID string) []Trip {
 	var tripArray []Trip
-	query := fmt.Sprintf("Select * FROM DRide.Trip WHERE PassengerID = " + "'" + PassengerID + "' ORDER BY EndDateTime IS NULL DESC, EndDateTime DESC")
+	// Getting trips in order of earliest to oldest trip
+	query := fmt.Sprintf("Select * FROM DRideTrip.Trip WHERE PassengerID = " + "'" + PassengerID + "' AND EndDateTime IS NOT NULL ORDER BY EndDateTime DESC")
 
 	results, err := db.Query(query)
 
@@ -101,8 +106,9 @@ func GetSingleRecordFromPassenger(db *sql.DB, PassengerID string) []Trip {
 	return tripArray
 }
 
+// Passenger API with methods GET PUT POST DELETE
 func trip(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRide")
+	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/DRideTrip")
 
 	// handle db error
 	if err != nil {
@@ -111,7 +117,10 @@ func trip(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 
-	//Get Trip Record
+	// Get Trip Record for the necessary user,
+	// Driver - Get Requested Trips using DriverID
+	// Passenger - Get Past Trips using PassengerID
+	// General - Get single trip record using TripID
 	if r.Method == "GET" {
 		ID := params["ID"]
 		v := r.URL.Query()
@@ -122,7 +131,7 @@ func trip(w http.ResponseWriter, r *http.Request) {
 			return
 		} else if v["userType"][0] == "passenger" {
 			var retrievedTrip []Trip
-			retrievedTrip = GetSingleRecordFromPassenger(db, ID)
+			retrievedTrip = GetRecordFromPassenger(db, ID)
 			json.NewEncoder(w).Encode(retrievedTrip)
 			fmt.Println("Returned retrieved Trip from PassengerID")
 			return
@@ -133,10 +142,9 @@ func trip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Posting a request for trip
 	if r.Header.Get("Content-type") == "application/json" {
-
-		// Register
+		// Posting a request for trip
+		// Inserting a new trip record
 		if r.Method == "POST" {
 
 			passengerID := params["ID"]
@@ -157,14 +165,13 @@ func trip(w http.ResponseWriter, r *http.Request) {
 				}
 
 				//Get available driver
-				results, err := db.Query("Select * FROM Dride.Driver")
+				results, err := db.Query("Select * FROM DrideDriver.Driver")
 
 				if err != nil {
 					panic(err.Error())
 				}
 
 				for results.Next() {
-					// map this type to the record in the table
 					var driver Driver
 					err = results.Scan(&driver.DriverID, &driver.FirstName,
 						&driver.LastName, &driver.MobileNo, &driver.Email, &driver.LicenseNo, &driver.Status)
@@ -172,9 +179,11 @@ func trip(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						panic(err.Error())
 					}
+					// Check if driver status is available
 					if driver.Status == "Available" {
-						query := fmt.Sprintf("INSERT INTO Trip (PassengerID, DriverID, PickUpPostalCode, DropOffPostalCode) VALUES ('%s', '%s', '%s', '%s');",
-							passengerID, driver.DriverID, location.PickUpPostalCode, location.DropOffPostalCode) //)
+						// If available, insert trip and assign the driver id to the trip
+						query := fmt.Sprintf("INSERT INTO DRideTrip.Trip (PassengerID, DriverID, PickUpPostalCode, DropOffPostalCode) VALUES ('%s', '%s', '%s', '%s');",
+							passengerID, driver.DriverID, location.PickUpPostalCode, location.DropOffPostalCode)
 
 						_, err := db.Query(query)
 
@@ -183,8 +192,9 @@ func trip(w http.ResponseWriter, r *http.Request) {
 						}
 
 						fmt.Println("Trip has been created")
+
 						// Setting driver availability to Unavailable
-						queryStatus := fmt.Sprintf("UPDATE Driver SET Status = 'Unavailable' WHERE DriverID = '%s';",
+						queryStatus := fmt.Sprintf("UPDATE DRideDriver.Driver SET Status = 'Unavailable' WHERE DriverID = '%s';",
 							driver.DriverID)
 						_, err2 := db.Query(queryStatus)
 
@@ -212,6 +222,7 @@ func trip(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Updating trip information (start trip and end trip)
 		if r.Method == "PUT" {
 			driverID := params["ID"]
 			var trip Trip
@@ -235,7 +246,7 @@ func trip(w http.ResponseWriter, r *http.Request) {
 				if trip.StartDateTime == "" {
 					// Insert Start DateTime and indicate trip has been started
 					// update trip
-					query := fmt.Sprintf("UPDATE Trip SET StartDateTime = '%s' WHERE TripID = '%s'",
+					query := fmt.Sprintf("UPDATE DRideTrip.Trip SET StartDateTime = '%s' WHERE TripID = '%s'",
 						time.Now().Format("2006-01-02 15:04:05"), trip.TripID)
 
 					_, err := db.Query(query)
@@ -251,7 +262,7 @@ func trip(w http.ResponseWriter, r *http.Request) {
 
 				} else if trip.EndDateTime == "" {
 					//Insert End Datetime and indicate trip has ended
-					query := fmt.Sprintf("UPDATE Trip SET EndDateTime = '%s' WHERE TripID = '%s'",
+					query := fmt.Sprintf("UPDATE DRideTrip.Trip SET EndDateTime = '%s' WHERE TripID = '%s'",
 						time.Now().Format("2006-01-02 15:04:05"), trip.TripID)
 
 					_, err := db.Query(query)
@@ -261,7 +272,7 @@ func trip(w http.ResponseWriter, r *http.Request) {
 					}
 
 					// Setting driver availability to Unavailable
-					queryStatus := fmt.Sprintf("UPDATE Driver SET Status = 'Available' WHERE DriverID = '%s';",
+					queryStatus := fmt.Sprintf("UPDATE DRideDriver.Driver SET Status = 'Available' WHERE DriverID = '%s';",
 						trip.DriverID)
 					_, err2 := db.Query(queryStatus)
 
@@ -297,9 +308,11 @@ func trip(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	router := mux.NewRouter()
+	// Trip API Methods
 	router.HandleFunc("/api/v1/trip/{ID}", trip).Methods(
 		"GET", "PUT", "POST", "DELETE")
 
+	// Using port 120 as trip API
 	fmt.Println("Listening at port 120")
 	log.Fatal(http.ListenAndServe(":120", router))
 
