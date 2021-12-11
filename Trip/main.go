@@ -310,7 +310,7 @@ func main() {
 	router := mux.NewRouter()
 	// Trip API Methods
 	router.HandleFunc("/api/v1/trip/{ID}", trip).Methods(
-		"GET", "PUT", "POST", "DELETE")
+		"GET", "PUT", "POST")
 
 	// Using port 120 as trip API
 	fmt.Println("Listening at port 120")
