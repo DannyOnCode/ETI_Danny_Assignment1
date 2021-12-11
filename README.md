@@ -85,13 +85,15 @@ The PUT request is used by the driver that wants to either start a trip or end a
 ## Instructions to setting up and running of microservices <a name="instructions"></a>
 Under this section, I will be going through how to start up the microservices that have been developed as well as how to set up the database to create the databases and tables.
 ### Setting up of Database <a name="database"></a>
-Under the "ETI_DANNY_ASSIGNMENT1" Folder there is a file named "sql_eti_setup.sql". Open the file and run the script inside the file. By doing so, you should have created the needed databases and tables required.<br>
-Three database will be created called, "DRidePassenger", "DRideDriver", "DRideTrip".<br>
-Under each database the tables, "Passenger", "Driver", "Trip" should have been created respectively.<br>
-Lastly, some dummy data will have been created under the Passenger and Driver.<br>
+Under the "ETI_DANNY_ASSIGNMENT1" Folder there is a file named "sql_eti_setup.sql". Open the file and run the script inside the file.<br><br>
+
+By doing the above, the needed databases and tables required should have been created.<br>
+Three database will be created called, **"DRidePassenger", "DRideDriver", "DRideTrip"**.<br>
+Under each database the tables, **"Passenger", "Driver", "Trip"** should have been created respectively.<br>
+Lastly, some dummy data will have been created under the **Passenger and Driver**.<br>
 
 ### Commands to run Microservices <a name="microservice"></a>
-To run the microservices, firstly open four different command prompts in your terminal.<br><br>
+To run the microservices, firstly open four different command prompts in your terminal and input the follow commands below into each of the command prompts.<br><br>
 In the first command prompt access the web folder and start the microservice through the follow commands
 ```console
 cd web && go run main.go
