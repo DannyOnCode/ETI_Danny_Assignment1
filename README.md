@@ -11,8 +11,8 @@
 
 ## Introduction  <a name="introduction"></a>
 I am the developer Danny Chan Yu Tian and This README is dedicated to talk about the follow assignment, ETI Assignment 1 on a Trip Application called "DRide".<br> 
-In the follow sections I will first be discussing the design consideration that I have made when designing the application and its microservices.<br>
-I will then show a diagram of the architecture of application and be explaining each Microservices.<br>
+In the follow sections I will first be showing a diagram of the architecture of application and following to discussing the design consideration that I have made when designing the application and its microservices.<br>
+I will then be explaining each Microservices.<br>
 Lastly, I will end the README with instructions on how to set up and run the microservice and database<br>
 
 ## Design Consideration of Microservices <a name="consideration"></a>
